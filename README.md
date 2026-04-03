@@ -15,8 +15,18 @@ Adapted from [gitlab-skyline](https://gitlab.com/felixgomez/gitlab-skyline) by F
 - **Python 3.14+**
 - **GitHub Personal Access Token** with `read:user` scope
 - **OpenSCAD** (optional, for STL generation... currently the stable release is not signed on macos)
+- **Public GitHub profile** - The target user's profile must be public to access contribution data
 
 The token can be provided via `--token` argument or stored in `~/.github_token` file (which is used by default).
+
+### Making Your Profile Public
+
+If you're generating a skyline for your own profile, ensure it's not private:
+
+1. In the upper-right corner of any page on GitHub, click your profile picture, then click Settings
+2. Navigate to the "Public profile" section, and scroll down to "Contributions & Activity"
+3. **Uncheck** the checkbox next to "Make profile private and hide activity"
+4. Click Update preferences
 
 ## Installation
 
