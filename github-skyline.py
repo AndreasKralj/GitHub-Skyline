@@ -354,8 +354,9 @@ def main():
     parser.add_argument('username', type=str, help='GitHub username (without @)')
     parser.add_argument('year', type=int, nargs="?", default=datetime.datetime.now().year - 1,
                         help='Year of contributions to fetch (default: last year)')
-    parser.add_argument('--token', type=str, required=True,
-                        help='GitHub Personal Access Token (needs read:user scope)')
+    parser.add_argument('--token', type=str, default=None,
+                        help='GitHub Personal Access Token (needs read:user scope). '
+                             'Defaults to reading from ~/.github_token if not provided.')
     parser.add_argument('--displayname', type=str, default=None,
                         help='Display name to engrave on the model (default: username)')
 
@@ -363,8 +364,20 @@ def main():
 
     username = args.username
     year = args.year
-    token = args.token
     displayname = args.displayname if args.displayname else username
+
+    # Read token from --token arg or ~/.github_token file
+    if args.token:
+        token = args.token
+    else:
+        token_file = os.path.expanduser('~/.github_token')
+        if os.path.isfile(token_file):
+            with open(token_file, 'r') as f:
+                token = f.read().strip()
+            if not token:
+                parser.error(f"Token file {token_file} is empty. Provide --token or add a token to the file.")
+        else:
+            parser.error(f"No --token provided and {token_file} not found. Create the file with your PAT or use --token.")
 
     print(f"Fetching {year} contributions for {username} from GitHub...")
 
