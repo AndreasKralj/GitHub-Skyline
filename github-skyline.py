@@ -282,7 +282,7 @@ def generate_skyline_stl(username, year, contribution_matrix):
     logo_scad = rotate([face_angle, 0, 0])(
         translate([base_length / 8, base_height / 2 - base_top_offset / 2 - 2, -1])(
             linear_extrude(height=2)(
-                scale([0.06, 0.06, 0.06])(
+                scale([0.04, 0.04, 0.04])(
                     import_(os.path.dirname(os.path.realpath(__file__)) + os.path.sep + "github.svg")
                 )
             )
