@@ -314,12 +314,11 @@ def generate_skyline_stl(username, year, contribution_matrix):
             bars += bar
 
     scad_contributions_filename = 'github_' + username + '_' + str(year)
-    scad_skyline_object = base_scad - logo_scad + user_scad + year_scad
+    scad_base_object = base_scad - logo_scad + user_scad + year_scad
+    scad_skyline_object = scad_base_object
 
     if bars is not None:
         scad_skyline_object += bars
-
-    scad_skyline_object.save_as_scad(scad_contributions_filename + '.scad')
 
     openscad_bin = shutil.which('openscad')
     if openscad_bin is None:
@@ -339,10 +338,24 @@ def generate_skyline_stl(username, year, contribution_matrix):
         print(f"  openscad -o {scad_contributions_filename}.stl {scad_contributions_filename}.scad")
         return
 
+    # Combined STL
+    scad_skyline_object.save_as_scad(scad_contributions_filename + '.scad')
     subprocess.run([openscad_bin, '-o', scad_contributions_filename + '.stl', scad_contributions_filename + '.scad'],
                    capture_output=True)
-
     print('Generated STL file ' + scad_contributions_filename + '.stl')
+
+    # Base-only STL (for multicolor printing)
+    scad_base_object.save_as_scad(scad_contributions_filename + '_base.scad')
+    subprocess.run([openscad_bin, '-o', scad_contributions_filename + '_base.stl', scad_contributions_filename + '_base.scad'],
+                   capture_output=True)
+    print('Generated STL file ' + scad_contributions_filename + '_base.stl')
+
+    # Bars-only STL (for multicolor printing)
+    if bars is not None:
+        bars.save_as_scad(scad_contributions_filename + '_bars.scad')
+        subprocess.run([openscad_bin, '-o', scad_contributions_filename + '_bars.stl', scad_contributions_filename + '_bars.scad'],
+                       capture_output=True)
+        print('Generated STL file ' + scad_contributions_filename + '_bars.stl')
 
 
 def main():
