@@ -313,7 +313,11 @@ def generate_skyline_stl(username, year, contribution_matrix, scale_factor=1.0):
         else:
             bars += bar
 
-    scad_contributions_filename = 'github_' + username + '_' + str(year)
+    # Create output directory if it doesn't exist
+    output_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'stl_and_scad_files')
+    os.makedirs(output_dir, exist_ok=True)
+
+    scad_contributions_filename = os.path.join(output_dir, 'github_' + username + '_' + str(year))
     scad_base_object = base_scad - logo_scad + user_scad + year_scad
     scad_skyline_object = scad_base_object
 
