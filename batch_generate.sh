@@ -34,6 +34,7 @@ USERS=(
     "mikejuneau|Mike.Juneau"
     "NS-CloudBoi|Nick.Stein"
     "NickHarveyVu|Nick.Harvey"
+    "LukeShermanVU|Luke.Sherman"
 )
 
 mkdir -p "$STL_DIR" "$OUTPUT_DIR"
