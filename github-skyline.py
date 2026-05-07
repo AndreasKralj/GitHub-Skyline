@@ -224,19 +224,19 @@ def parse_contribution_matrix(contribution_matrix):
     return [year_contribution_list, max_contributions_by_day]
 
 
-def generate_skyline_stl(username, year, contribution_matrix):
+def generate_skyline_stl(username, year, contribution_matrix, scale_factor=1.0):
     year_contribution_list, max_contributions_by_day = parse_contribution_matrix(contribution_matrix)
 
     if max_contributions_by_day == 0:
         print(f"No contributions found for {username} in {year}.")
         return
 
-    base_top_width = 23
-    base_width = 30
-    base_length = 150
-    base_height = 10
-    max_length_contributionbar = 20
-    bar_base_dimension = 2.5
+    base_top_width = 23 * scale_factor
+    base_width = 30 * scale_factor
+    base_length = 150 * scale_factor
+    base_height = 10 * scale_factor
+    max_length_contributionbar = 20 * scale_factor
+    bar_base_dimension = 2.5 * scale_factor
 
     base_top_offset = (base_width - base_top_width) / 2
     face_angle = math.degrees(math.atan(base_height / base_top_offset))
@@ -264,25 +264,25 @@ def generate_skyline_stl(username, year, contribution_matrix):
     base_scad = polyhedron(points=base_points, faces=base_faces)
 
     year_scad = rotate([face_angle, 0, 0])(
-        translate([base_length - base_length / 5, base_height / 2 - base_top_offset / 2 - 1, -1.5])(
-            linear_extrude(height=2)(
-                text(str(year), 6)
+        translate([base_length - base_length / 5, base_height / 2 - base_top_offset / 2 - 1 * scale_factor, -1.5 * scale_factor])(
+            linear_extrude(height=2 * scale_factor)(
+                text(str(year), 6 * scale_factor)
             )
         )
     )
 
     user_scad = rotate([face_angle, 0, 0])(
-        translate([base_length / 4, base_height / 2 - base_top_offset / 2, -1.5])(
-            linear_extrude(height=2)(
-                text("@" + username, 5)
+        translate([base_length / 4, base_height / 2 - base_top_offset / 2, -1.5 * scale_factor])(
+            linear_extrude(height=2 * scale_factor)(
+                text("@" + username, 5 * scale_factor)
             )
         )
     )
 
     logo_scad = rotate([face_angle, 0, 0])(
-        translate([base_length / 8, base_height / 2 - base_top_offset / 2 - 2, -1])(
-            linear_extrude(height=2)(
-                scale([0.09, 0.09, 0.09])(
+        translate([base_length / 8, base_height / 2 - base_top_offset / 2 - 1.5 * scale_factor, -1 * scale_factor])(
+            linear_extrude(height=2 * scale_factor)(
+                scale([0.04 * scale_factor, 0.04 * scale_factor, 0.04 * scale_factor])(
                     import_(os.path.dirname(os.path.realpath(__file__)) + os.path.sep + "github.svg")
                 )
             )
@@ -302,8 +302,8 @@ def generate_skyline_stl(username, year, contribution_matrix):
             continue
 
         bar = translate(
-            [base_top_offset + 2.5 + (week_number - 1) * bar_base_dimension,
-             base_top_offset + 2.5 + day_number * bar_base_dimension, base_height])(
+            [base_top_offset + 2.5 * scale_factor + (week_number - 1) * bar_base_dimension,
+             base_top_offset + 2.5 * scale_factor + day_number * bar_base_dimension, base_height])(
             cube([bar_base_dimension, bar_base_dimension,
                   year_contribution_list[i] * max_length_contributionbar / max_contributions_by_day])
         )
@@ -313,13 +313,16 @@ def generate_skyline_stl(username, year, contribution_matrix):
         else:
             bars += bar
 
-    scad_contributions_filename = 'github_' + username + '_' + str(year)
-    scad_skyline_object = base_scad - logo_scad + user_scad + year_scad
+    # Create output directory if it doesn't exist
+    output_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'stl_and_scad_files')
+    os.makedirs(output_dir, exist_ok=True)
+
+    scad_contributions_filename = os.path.join(output_dir, 'github_' + username + '_' + str(year))
+    scad_base_object = base_scad - logo_scad + user_scad + year_scad
+    scad_skyline_object = scad_base_object
 
     if bars is not None:
         scad_skyline_object += bars
-
-    scad_skyline_object.save_as_scad(scad_contributions_filename + '.scad')
 
     openscad_bin = shutil.which('openscad')
     if openscad_bin is None:
@@ -339,10 +342,24 @@ def generate_skyline_stl(username, year, contribution_matrix):
         print(f"  openscad -o {scad_contributions_filename}.stl {scad_contributions_filename}.scad")
         return
 
+    # Combined STL
+    scad_skyline_object.save_as_scad(scad_contributions_filename + '.scad')
     subprocess.run([openscad_bin, '-o', scad_contributions_filename + '.stl', scad_contributions_filename + '.scad'],
                    capture_output=True)
-
     print('Generated STL file ' + scad_contributions_filename + '.stl')
+
+    # Base-only STL (for multicolor printing)
+    scad_base_object.save_as_scad(scad_contributions_filename + '_base.scad')
+    subprocess.run([openscad_bin, '-o', scad_contributions_filename + '_base.stl', scad_contributions_filename + '_base.scad'],
+                   capture_output=True)
+    print('Generated STL file ' + scad_contributions_filename + '_base.stl')
+
+    # Bars-only STL (for multicolor printing)
+    if bars is not None:
+        bars.save_as_scad(scad_contributions_filename + '_bars.scad')
+        subprocess.run([openscad_bin, '-o', scad_contributions_filename + '_bars.stl', scad_contributions_filename + '_bars.scad'],
+                       capture_output=True)
+        print('Generated STL file ' + scad_contributions_filename + '_bars.stl')
 
 
 def main():
@@ -359,6 +376,8 @@ def main():
                              'Defaults to reading from ~/.github_token if not provided.')
     parser.add_argument('--displayname', type=str, default=None,
                         help='Display name to engrave on the model (default: username)')
+    parser.add_argument('--scale', type=float, default=1.0,
+                        help='Scale factor for the entire model (default: 1.0, e.g. 1.2 for 20% larger)')
 
     args = parser.parse_args()
 
@@ -386,7 +405,7 @@ def main():
     print(f"Found {sum(c[2] for c in contribution_matrix)} total contributions across {len(contribution_matrix)} days.")
     print("Generating STL...")
 
-    generate_skyline_stl(displayname, year, contribution_matrix)
+    generate_skyline_stl(displayname, year, contribution_matrix, args.scale)
 
 
 if __name__ == '__main__':
